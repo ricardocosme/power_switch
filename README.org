@@ -1,0 +1,60 @@
+** on/off
+This is an alternative to a soft latching power switch circuit. It *only needs one momentary switch*, like an ordinary tactile push button, and *two pins*. One pin with support to ~PCINT~ to connect the switch that turns on and off the system and another one to deliver power to the system(load).
+
+The system starts in the off state consuming only the current that is drawn at the power-down sleep mode. Using an ATtiny85 this is for example 5uA@5V. When the power switch is pressed the MCU wakes up and turns on the system delivering power. If the switch is pressed again the system is halted and the MCU goes to sleep.
+
+*** Demo using one LED as load
+#+BEGIN_SRC
+#include <on_off.hpp>
+#define F_CPU 1e6
+#include <util/delay.h>
+
+using namespace avr::io;
+
+static auto& load{pb0};
+static auto& sw{pb2};
+
+AVRINT_PCINT0(){ on_off::turnon(sw, load); }
+
+int main() {
+    auto btn_pressed = [](auto pin){
+        if(pin.is_low()) {
+            _delay_ms(40);
+            return pin.is_low();
+        } 
+        return false;
+    };
+    
+    auto btn_released = [](auto pin){
+        if(pin.is_high()) {
+            _delay_ms(40);
+            return pin.is_high();
+        } 
+        return false;
+    };
+    
+    on_off::on_off power(sw, load, btn_pressed, btn_released);
+
+    while(true) {
+        power.poll();
+    }
+}
+#+END_SRC
+[[file:demo.cpp][demo.cpp]]
+
+The load can be represented by a LED connected to the pin PB0 that can be turned on or off by a push button connected to the pin PB2. When the MCU is started it goes to sleep using the power-down sleep mode. If the switch is pressed the MCU wakes up and turns on the LED. If the switch is pressed again the MCU turns off the LED and goes to sleep.
+
+The demo uses ~219 bytes~ when compiled with ~avr-gcc 10.2 -Os -flto -mmcu=attiny85~
+
+*** Requirements and dependencies
+1. ~avr-gcc~ with at least support to C++17.
+2. [[https://github.com/ricardocosme/avrIO][avrIO]]
+3. [[https://github.com/ricardocosme/avrSLEEP][avrSLEEP]]
+4. [[https://github.com/ricardocosme/avrINT][avrINT]]
+5. [[https://github.com/ricardocosme/avrWDT][avrWDT]]
+
+*** Supported MCUs
+Any AVR8 that offers ~PCINT~ should be supported.
+
+**** Tested on
+1. ATtiny25/45/85
