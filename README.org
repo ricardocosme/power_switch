@@ -4,7 +4,7 @@ This is an alternative to a soft latching power switch circuit. It *only needs o
 The system starts in the off state consuming only the current that is drawn at the power-down sleep mode. Using an ATtiny85 this is for example ~5uA@5V~. When the power switch is pressed the MCU wakes up and turns on the system delivering power. If the switch is pressed again the system is halted and the MCU goes to sleep.
 
 *** Demo using one LED as load
-#+BEGIN_SRC
+#+BEGIN_SRC C++
 #include <on_off.hpp>
 #define F_CPU 1e6
 #include <util/delay.h>
