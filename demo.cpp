@@ -7,7 +7,7 @@ using namespace avr::io;
 /** This demo illustrates how to use only one momentary switch and two pins 
     to implement a power switch.
 
-    The load can be represented by a LED connected to the pin PB0 that
+    The load is represented by a LED connected to the pin PB0 and it
     can be turned on or off by a push button connected to the pin
     PB2. When the MCU is started it goes to sleep using the power-down
     sleep mode. If the switch is pressed the MCU wakes up and turns on
@@ -18,7 +18,8 @@ using namespace avr::io;
 static auto& load{pb0};
 static auto& sw{pb2};
 
-/** ISR to turn on the system when the MCU is sleeping. */
+/** ISR to turn on the system when the MCU is sleeping and the power
+    switch is pressed. */
 AVRINT_PCINT0(){ on_off::turnon(sw, load); }
 
 int main() {
