@@ -14,9 +14,12 @@ using namespace avr::io;
 static auto& load{pb0};
 static auto& sw{pb2};
 
+/** ISR to turn on the system when the MCU is sleeping. */
 AVRINT_PCINT0(){ on_off::turnon(sw, load); }
 
 int main() {
+    /** A naive implementation to debounces a pressed push button that
+        uses a pull-up resistor. */
     auto btn_pressed = [](auto pin){
         if(pin.is_low()) {
             _delay_ms(40);
@@ -25,6 +28,7 @@ int main() {
         return false;
     };
     
+    /** A naive implementation to debounces a released push button. */
     auto btn_released = [](auto pin){
         if(pin.is_high()) {
             _delay_ms(40);
@@ -33,9 +37,12 @@ int main() {
         return false;
     };
     
+    /** The system is halted at the startup and it turns on when the
+        switch is pressed. */
     on_off::on_off power(sw, load, btn_pressed, btn_released);
 
     while(true) {
+        /** Polling to check if the system should be turned off. */
         power.poll();
     }
 }
