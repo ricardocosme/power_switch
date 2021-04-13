@@ -1,7 +1,7 @@
 ** power switch 
 This is an alternative to a soft latching power switch circuit. It *only needs one momentary switch*, like an ordinary tactile push button, and *two pins*. One pin with support to ~PCINT~ to connect the switch that turns on and off the system and another one to deliver power to the system(load).
 
-The system starts in the off state consuming only the current that is drawn at the power-down sleep mode. Using an ATtiny85 this is for example ~5uA@5V~. When the power switch is pressed the MCU wakes up and turns on the system delivering power. If the switch is pressed again the system is halted and the MCU goes to sleep.
+The system starts in the off state consuming only the current that is drawn at the power-down sleep mode. Using an ATtiny85 this is for example ~0.5uA@5V~. When the power switch is pressed the MCU wakes up and turns on the system delivering power. If the switch is pressed again the system is halted and the MCU goes to sleep.
 
 *** Demo using one LED as load
 #+BEGIN_SRC C++
