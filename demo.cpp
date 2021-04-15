@@ -1,11 +1,11 @@
-#include <on_off.hpp>
+#include <power_switch.hpp>
 #define F_CPU 1e6
 #include <util/delay.h>
 
 using namespace avr::io;
 
-/** This demo illustrates how to use only one momentary switch and two pins 
-    to implement a power switch.
+/** This demo illustrates how to use only one momentary switch plus
+    one pin to deliver power to implement a power switch.
 
     The load is represented by a LED connected to the pin PB0 and it
     can be turned on or off by a push button connected to the pin
@@ -20,7 +20,7 @@ static auto& sw{pb2};
 
 /** ISR to turn on the system when the MCU is sleeping and the power
     switch is pressed. */
-AVRINT_PCINT0(){ on_off::turnon(sw, load); }
+AVRINT_PCINT0(){ power::turnon(sw, load); }
 
 int main() {
     /** A naive implementation to debounces a pressed push button that
@@ -44,7 +44,7 @@ int main() {
     
     /** The system is halted at the startup and it turns on when the
         switch is pressed. */
-    on_off::on_off power(sw, load, btn_pressed, btn_released);
+    power::sw power(sw, load, btn_pressed, btn_released);
 
     while(true) {
         /** Polling to check if the system should be turned off. */

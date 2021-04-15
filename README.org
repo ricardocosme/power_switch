@@ -1,69 +1,63 @@
 ** power switch 
-This is an alternative to a soft latching power switch circuit. It *only needs one momentary switch*, like an ordinary tactile push button, and *two pins*. One pin with support to ~PCINT~ to connect the switch that turns on and off the system and another one to deliver power to the system(load).
+This is an alternative to a soft latching power switch circuit using only one momentary switch, like an ordinary tactile push button and one MCU pin to deliver power to the system. 
 
-The system starts in the off state consuming only the current that is drawn at the power-down sleep mode. Using an ATtiny85 this is for example ~0.5uA@5V~. When the power switch is pressed the MCU wakes up and turns on the system delivering power. If the switch is pressed again the system is halted and the MCU goes to sleep.
+*** How it works?
+When a Power-on reset occurs, for example when the MCU is connected to the power supply, the microcontroller goes to sleep using the power down mode and the system, which means the whole circuit that receives power from a MCU pin, is turned off. When the switch is turned on the microcontroller wakes up and turn on the system delivering power. During the main event loop of the application, the power switch is polled in order to know if the switch was pressed again. When the switch is pressed by the second time the MCU turns off the system and goes to sleep again. If the button is presseg again(the third time) the microcontroller wakes up and it resets itself using a watchdog timer in reset mode, and the whole cycle begins again.
 
 *** Demo using one LED as load
 #+BEGIN_SRC C++
-#include <on_off.hpp>
-#define F_CPU 1e6
-#include <util/delay.h>
+  #include <power_switch.hpp>
+  #define F_CPU 1e6
+  #include <util/delay.h>
 
-using namespace avr::io;
+  using namespace avr::io;
 
-static auto& load{pb0};
-static auto& sw{pb2};
+  /** This demo illustrates how to use only one momentary switch plus
+      one pin to deliver power to implement a power switch.
 
-/** ISR to turn on the system when the MCU is sleeping and the power
-    switch is pressed. */
-AVRINT_PCINT0(){ on_off::turnon(sw, load); }
+      The load is represented by a LED connected to the pin PB0 and it
+      can be turned on or off by a push button connected to the pin
+      PB2. When the MCU is started it goes to sleep using the power-down
+      sleep mode. If the switch is pressed the MCU wakes up and turns on
+      the LED. If the switch is pressed again the MCU turns off the LED
+      and goes to sleep.
+   ,*/
 
-int main() {
-    /** A naive implementation to debounces a pressed push button that
-        uses a pull-up resistor. */
-    auto btn_pressed = [](auto pin){
-        if(pin.is_low()) {
-            _delay_ms(40);
-            return pin.is_low();
-        } 
-        return false;
-    };
-    
-    /** A naive implementation to debounces a released push button. */
-    auto btn_released = [](auto pin){
-        if(pin.is_high()) {
-            _delay_ms(40);
-            return pin.is_high();
-        } 
-        return false;
-    };
-    
-    /** The system is halted at the startup and it turns on when the
-        switch is pressed. */
-    on_off::on_off power(sw, load, btn_pressed, btn_released);
+  static auto& load{pb0};
+  static auto& sw{pb2};
 
-    while(true) {
-        /** Polling to check if the system should be turned off. */
-        power.poll();
-    }
-}
+  /** ISR to turn on the system when the MCU is sleeping and the power
+      switch is pressed. */
+  AVRINT_PCINT0(){ power::turnon(sw, load); }
+
+  int main() {
+      /** The system is halted at the startup and it turns on when the
+          switch is pressed. 
+
+          btn_pressed and btn_released are predicates to be implemented
+          by the user. It's vital that the implementation debounces the
+          button if it's necessary.
+      */
+      power::sw power(sw, load, btn_pressed, btn_released);
+
+      while(true) {
+          /** Polling to check if the system should be turned off. */
+          power.poll();
+      }
+  }
 #+END_SRC
 [[file:demo.cpp][demo.cpp]]
 
-The load is represented by a LED connected to the pin PB0 and it can be turned on or off by a push button connected to the pin PB2. When the MCU starts it goes to sleep using the power-down sleep mode. If the switch is pressed the MCU wakes up and turns on the LED. If the switch is pressed again the MCU turns off the LED and goes to sleep.
-
-The demo uses ~219 bytes~ when compiled with ~avr-gcc 10.2 -Os -flto
+The demo uses ~351 bytes~ when compiled with ~avr-gcc 10.2 -Os -flto
 -mmcu=attiny85~.
 
 *** Requirements and dependencies
 1. ~avr-gcc~ with at least support to C++17.
-2. [[https://github.com/ricardocosme/avrIO][avrIO]]
-3. [[https://github.com/ricardocosme/avrSLEEP][avrSLEEP]]
-4. [[https://github.com/ricardocosme/avrINT][avrINT]]
-5. [[https://github.com/ricardocosme/avrWDT][avrWDT]]
+2. [[https://github.com/ricardocosme/avrcxx][avrcxx]]
+3. The pin connected to the push button must be a ~PCINT~ pin.
 
 *** Supported MCUs
-Any AVR8 that offers ~PCINT~ should be supported.
+Any AVR8 that offers ~PCINT~ and the watchdog timer with a timeout value of  ~16ms~ should be supported.
 
 **** Tested on
 1. ATtiny25/45/85
